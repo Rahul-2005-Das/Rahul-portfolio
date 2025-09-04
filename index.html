@@ -132,15 +132,115 @@
         .delay-2 { animation-delay: 0.4s; }
         .delay-3 { animation-delay: 0.6s; }
         .delay-4 { animation-delay: 0.8s; }
-    </style>
+body.dark-mode {
+    background-color: var(--dark);
+    color: var(--light);
+}
+
+body.dark-mode .navbar.scrolled {
+    background-color: rgba(0, 0, 0, 0.9);
+}
+
+body.dark-mode section,
+body.dark-mode .bg-white {
+    background-color: #2c2c2c !important;
+    color: var(--light);
+}
+
+body.dark-mode .text-gray-600,
+body.dark-mode .text-gray-700,
+body.dark-mode .text-gray-400 {
+    color: var(--light) !important;
+}
+
+
+/* Neon / 3D Theme */
+
+
+/* ===== Neon 3D Theme ===== */
+body.neon-mode {
+    background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+    perspective: 1000px;
+    transition: all 0.4s ease-in-out;
+}
+
+/* Keep all your existing neon text colors (no override here) */
+
+/* Buttons - Gradient Glow & 3D Pop */
+body.neon-mode button,
+body.neon-mode .gradient-bg,
+body.neon-mode a.gradient-bg {
+    box-shadow: 
+        0 0 8px #ff00ff,
+        0 0 16px #00ffff;
+    transform: translateZ(5px);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+body.neon-mode button:hover,
+body.neon-mode .gradient-bg:hover {
+    transform: translateZ(12px) scale(1.05);
+    box-shadow: 
+        0 0 12px #ff00ff,
+        0 0 20px #00ffff,
+        0 0 30px rgba(255,255,255,0.3);
+}
+
+/* Cards / Sections - Glass Look */
+body.neon-mode .bg-white {
+    background: rgba(255,255,255,0.05) !important;
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow: 0 0 12px rgba(0,255,255,0.4), 0 0 18px rgba(255,0,255,0.4);
+    backdrop-filter: blur(8px);
+    transform: translateZ(5px);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+body.neon-mode .bg-white:hover {
+    transform: translateZ(12px) rotateX(2deg) rotateY(-2deg);
+    box-shadow: 0 0 16px rgba(0,255,255,0.6), 0 0 24px rgba(255,0,255,0.6);
+}
+
+/* Smooth Transitions */
+body, h1, h2, h3, p, a, button, .bg-white {
+    transition: all 0.4s ease-in-out;
+}
+
+/* ---- Mouse neon canvas ---- */
+#starCanvas{
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* lets clicks pass through to page */
+  z-index: 9999;        /* sits visually above but won't block clicks */
+  mix-blend-mode: screen; /* optional: makes colors blend nicely */
+}
+
+
+
+    
+
+</style>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body style="cursor: crosshair;">
+
+<canvas id="starCanvas"></canvas>
+
+
+
+
     <!-- Navigation -->
     <nav class="navbar fixed w-full z-50 py-4 px-6 md:px-12">
         <div class="container mx-auto flex justify-between items-center">
+
             <a href="#home" class="text-2xl font-bold gradient-text">Portfolio</a>
             <div class="hidden md:flex space-x-8">
+            
+	    <button id="themeToggle" class="ml-4 text-xl">
+            <i id="themeIcon" class="fas fa-moon"></i>
+            </button>
+
                 <a href="#home" class="hover:text-blue-600 transition">Home</a>
                 <a href="#skills" class="hover:text-blue-600 transition">Skills</a>
                 <a href="#resume" class="hover:text-blue-600 transition">Resume</a>
@@ -603,6 +703,38 @@
       spinner.classList.add("hidden");
     });
   });
+
+
+// Theme toggle
+
+const themes = ["light", "dark-mode", "neon-mode"];
+let currentThemeIndex = 0;
+
+document.getElementById("themeToggle").addEventListener("click", function () {
+    // Remove all themes first
+    document.body.classList.remove("dark-mode", "neon-mode");
+
+    // Go to the next theme
+    currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+
+    // Apply the theme if it's not "light"
+    if (themes[currentThemeIndex] !== "light") {
+        document.body.classList.add(themes[currentThemeIndex]);
+    }
+
+    // Change the icon based on the theme
+    const icon = document.getElementById("themeIcon");
+    if (themes[currentThemeIndex] === "dark-mode") {
+        icon.className = "fas fa-moon"; // dark mode icon
+    } else if (themes[currentThemeIndex] === "neon-mode") {
+        icon.className = "fas fa-star"; // neon mode icon
+    } else {
+        icon.className = "fas fa-sun"; // light mode icon
+    }
+});
+
+
+
 </script>
 
 
@@ -747,5 +879,186 @@
             });
         }
     </script>
+
+
+<script>
+/* Neon Comet + Meteor Streaks + Fireworks with Gravity
+   - DevicePixelRatio aware for crisp rendering
+   - Speed-responsive comet trail
+   - Gradient streaks for fast movement
+   - Click fireworks with gravity + particle cap
+*/
+
+(function () {
+  const canvas = document.getElementById('starCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  // state
+  let particles = [];
+  let lastX = 0, lastY = 0, lastTime = Date.now();
+  let DPR = window.devicePixelRatio || 1;
+  const GRAVITY = 0.06;
+  const MAX_PARTICLES = 1200;
+
+  // resize + DPR handling
+  function resize() {
+    DPR = window.devicePixelRatio || 1;
+    canvas.width = window.innerWidth * DPR;
+    canvas.height = window.innerHeight * DPR;
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+    // scale drawing so coordinates use CSS pixels
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // helper
+  function randomColor() {
+    const colors = ['#ff3f81','#00f5d4','#f9c74f','#90be6d','#f94144','#3a86ff'];
+    return colors[Math.floor(Math.random()*colors.length)];
+  }
+
+  // Throttle option (helps performance if needed)
+  let lastSpawn = 0;
+  const SPAWN_THROTTLE_MS = 6; // adjust to taste (smaller = denser)
+
+  // Mouse move -> comet trail + streaks (speed responsive)
+  document.addEventListener('mousemove', (e) => {
+    const now = Date.now();
+    if (now - lastSpawn < SPAWN_THROTTLE_MS) return; // throttle
+    lastSpawn = now;
+
+    let dx = e.clientX - lastX;
+    let dy = e.clientY - lastY;
+    let dt = (now - lastTime) / 1000 || 0.001;
+    let speed = Math.sqrt(dx*dx + dy*dy) / dt; // px/sec
+
+    lastX = e.clientX;
+    lastY = e.clientY;
+    lastTime = now;
+
+    // scale spawn based on speed
+    const count = Math.min(15, Math.max(3, Math.floor(speed / 40)));
+    const glow = Math.min(50, Math.max(14, speed / 5));
+    const fast = speed > 300;
+
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: e.clientX,
+        y: e.clientY,
+        radius: Math.random()*4 + 1,
+        color: randomColor(),
+        alpha: 1,
+        decay: 0.012 + Math.random()*0.02,
+        dx: (Math.random() - 0.5) * (2 + Math.min(4, speed/150)),
+        dy: (Math.random() - 0.5) * (2 + Math.min(4, speed/150)),
+        glow: glow,
+        tail: fast ? Math.random()*18 + 6 : 0,
+        gravity: 0
+      });
+    }
+
+    // keep array size sane
+    if (particles.length > MAX_PARTICLES) {
+      particles.splice(0, particles.length - MAX_PARTICLES);
+    }
+  });
+
+  // Click fireworks (with gravity)
+  document.addEventListener('click', (e) => {
+    const count = 36;
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random()*5 + 2;
+      particles.push({
+        x: e.clientX,
+        y: e.clientY,
+        radius: Math.random()*3 + 1,
+        color: randomColor(),
+        alpha: 1,
+        decay: 0.018 + Math.random()*0.02,
+        dx: Math.cos(angle) * speed,
+        dy: Math.sin(angle) * speed,
+        glow: 28,
+        tail: 0,
+        gravity: GRAVITY
+      });
+    }
+    if (particles.length > MAX_PARTICLES) {
+      particles.splice(0, particles.length - MAX_PARTICLES);
+    }
+  });
+
+  // animation loop
+  function animate() {
+    // clear using CSS pixel dimensions
+    ctx.clearRect(0, 0, canvas.width / DPR, canvas.height / DPR);
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      ctx.shadowBlur = p.glow;
+      ctx.shadowColor = p.color;
+      ctx.globalAlpha = Math.max(0, p.alpha);
+
+      if (p.tail > 0) {
+        // streak: gradient from star to transparent
+        const tailX = p.x - p.dx * p.tail;
+        const tailY = p.y - p.dy * p.tail;
+        const grad = ctx.createLinearGradient(p.x, p.y, tailX, tailY);
+        grad.addColorStop(0, p.color);
+        grad.addColorStop(1, 'transparent');
+
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(tailX, tailY);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = Math.max(1, p.radius);
+        ctx.stroke();
+      } else {
+        // normal glowing dot
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+      }
+
+      // movement
+      p.x += p.dx;
+      p.y += p.dy;
+      if (p.gravity) p.dy += p.gravity;
+
+      // fade out
+      p.alpha -= p.decay;
+
+      // remove if dead or off-screen
+      if (p.alpha <= 0 || p.x < -50 || p.x > window.innerWidth + 50 || p.y > window.innerHeight + 200) {
+        particles.splice(i, 1);
+      }
+    }
+
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(animate);
+  }
+  requestAnimationFrame(animate);
+
+  // optional: disable on touch devices or very small screens to save battery
+  function maybeDisableOnMobile() {
+    if ('ontouchstart' in window || window.innerWidth < 600) {
+      // remove listeners to disable effects on mobile
+      // (uncomment the following lines if you want automatic disabling)
+      // document.removeEventListener('mousemove', ... );
+      // document.removeEventListener('click', ... );
+    }
+  }
+  maybeDisableOnMobile();
+
+})();
+</script>
+
+
+
 </body>
 </html>
